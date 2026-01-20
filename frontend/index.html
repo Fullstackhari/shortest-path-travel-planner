@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Shortest Path Travel Planner</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(180deg, #eef6ff, #f7fbff);
+    }
+    .card {
+      max-width: 720px;
+      margin: 48px auto;
+      background: #fff;
+      border-radius: 18px;
+      padding: 28px;
+      box-shadow: 0 10px 30px rgba(21, 46, 90, 0.06);
+    }
+    .btn-find {
+      background: #2563eb;
+      color: #fff;
+      border-radius: 8px;
+      padding: 12px 16px;
+      display: block;
+      width: 100%;
+      text-align: center;
+      font-weight: 600;
+    }
+    .btn-maps {
+      background: #dc2626;
+      color: #fff;
+      border-radius: 8px;
+      padding: 12px 16px;
+      display: block;
+      width: 100%;
+      text-align: center;
+      font-weight: 600;
+    }
+    .btn-ai {
+      background: #048a3b;
+      color: #fff;
+      border-radius: 8px;
+      padding: 12px 16px;
+      display: block;
+      width: 100%;
+      text-align: center;
+      font-weight: 600;
+    }
+    .result-box {
+      border-radius: 10px;
+      background: #f8fafc;
+      padding: 14px;
+      border: 1px solid #e6eefc;
+      margin-top: 18px;
+    }
+    .username {
+      color: #2563eb;
+      font-weight: 700;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      max-width: 720px;
+      margin: 26px auto 0;
+      padding: 0 10px;
+    }
+    header h1 {
+      color: #2b59d6;
+      font-weight: 800;
+      font-size: 28px;
+    }
+    header a {
+      color: #d23;
+      font-weight: 600;
+      text-decoration: underline;
+    }
+
+    /* ===== Modal Styles ===== */
+    #modalBackdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 40;
+    }
+    #cityModal {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: #fff;
+      padding: 20px;
+      border-radius: 12px;
+      max-width: 720px;
+      width: 90%;
+      max-height: 80vh; /* Smaller, with scroll */
+      overflow-y: auto; /* Scrollable */
+      text-align: left;
+      z-index: 50;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+    }
+    #closeModalBtn {
+      background: #2563eb;
+      color: #fff;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      margin-top: 12px;
+      cursor: pointer;
+      display: block;
+      margin-left: auto;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🧭 Shortest Path Travel Planner</h1>
+    <a id="logout-btn" href="#">Logout</a>
+  </header>
+
+  <div class="card">
+    <h2 class="text-2xl font-semibold mb-4">Find the Shortest Travel Path Between Cities</h2>
+    <p class="mb-4">Welcome, <span id="username-display" class="username">guest</span>!</p>
+
+    <div class="mb-4">
+      <label class="block text-sm font-medium mb-1">Source City</label>
+      <select id="source" class="w-full p-3 border rounded-md"></select>
+    </div>
+
+    <div class="mb-6">
+      <label class="block text-sm font-medium mb-1">Destination City</label>
+      <select id="destination" class="w-full p-3 border rounded-md"></select>
+    </div>
+
+    <button id="find-path-btn" class="btn-find mb-6">🔍 Find Shortest Path</button>
+
+    <div id="path-output" class="result-box">
+      <p class="text-gray-500">Awaiting path calculation...</p>
+    </div>
+
+    <div class="mt-6">
+      <button id="open-maps-btn" class="btn-maps mb-3" style="display:none;">View Directions on Google Maps 🗺️</button>
+      <button id="get-ai-btn" class="btn-ai" style="display:none;">💡 Get Travel Insight</button>
+    </div>
+  </div>
+
+  <footer style="text-align:center; margin-top:16px; color:#7b8794;">
+     <!-- ==== © 2025 Shortest Path Travel Planner | Designed by C.Harindra ==== -->
+  </footer>
+
+  <!-- ===== Modal Section ===== -->
+  <div id="modalBackdrop"></div>
+  <div id="cityModal">
+    <div id="modalContent"></div>
+    <button id="closeModalBtn">Close</button>
+  </div>
+
+  <script>
+    const API_BASE_URL = "http://127.0.0.1:8000";
+
+    const sourceSelect = document.getElementById('source');
+    const destinationSelect = document.getElementById('destination');
+    const findPathBtn = document.getElementById('find-path-btn');
+    const pathOutput = document.getElementById('path-output');
+    const usernameDisplay = document.getElementById('username-display');
+    const openMapsBtn = document.getElementById('open-maps-btn');
+    const getAiBtn = document.getElementById('get-ai-btn');
+    const modal = document.getElementById('cityModal');
+    const backdrop = document.getElementById('modalBackdrop');
+    const closeModalBtn = document.getElementById('closeModalBtn');
+    const modalContent = document.getElementById('modalContent');
+
+    let currentPath = [];
+    let currentTotalTime = 0;
+
+    async function checkAuthAndInit() {
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/status`, { credentials: 'include' });
+        const data = await res.json();
+        if (res.ok && data.logged_in) {
+          usernameDisplay.textContent = data.username || 'user';
+          await loadCities();
+          return;
+        }
+      } catch (e) {
+        console.error("Auth check failed:", e);
+      }
+      window.location.assign('/login.html');
+    }
+
+    async function loadCities() {
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/cities`, { credentials: 'include' });
+        if (!res.ok) throw new Error('Failed to load cities');
+        const data = await res.json();
+        sourceSelect.innerHTML = '<option value="">-- Select Source --</option>';
+        destinationSelect.innerHTML = '<option value="">-- Select Destination --</option>';
+        data.cities.sort().forEach(city => {
+          const o1 = document.createElement('option');
+          o1.value = city;
+          o1.textContent = city;
+          const o2 = o1.cloneNode(true);
+          sourceSelect.appendChild(o1);
+          destinationSelect.appendChild(o2);
+        });
+      } catch (err) {
+        console.error("Error loading cities:", err);
+        pathOutput.innerHTML = `<p class="text-red-500">❌ Network Error: Could not load city data.</p>`;
+      }
+    }
+
+    function generateMapsUrl(path) {
+      if (!path || path.length < 2) return '#';
+      const directionsString = path.map(s => encodeURIComponent(s)).join('/');
+      return `https://www.google.com/maps/dir/${directionsString}`;
+    }
+
+    async function openCityModal(city) {
+      modal.style.display = 'block';
+      backdrop.style.display = 'block';
+      modalContent.innerHTML = `
+        <h2 style="margin-bottom:10px; color:#2563eb; text-align:center;">${city}</h2>
+        <a href="https://www.google.com/search?q=${encodeURIComponent(city)}"
+           target="_blank"
+           style="display:block; text-align:center; margin-top:8px; color:#2563eb;
+                  font-weight:600; text-decoration:underline; font-size:16px;">
+           🔗 View on Google
+        </a>
+      `;
+    }
+
+    closeModalBtn.addEventListener('click', () => {
+      modal.style.display = 'none';
+      backdrop.style.display = 'none';
+    });
+
+    findPathBtn.addEventListener('click', async () => {
+      const source = sourceSelect.value;
+      const destination = destinationSelect.value;
+      if (!source || !destination) {
+        alert('Please select both source and destination.');
+        return;
+      }
+
+      pathOutput.innerHTML = `<p class="text-blue-600">Calculating path...</p>`;
+      findPathBtn.disabled = true;
+      openMapsBtn.style.display = 'none';
+      getAiBtn.style.display = 'none';
+
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/path`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ source, destination })
+        });
+        const data = await res.json();
+        findPathBtn.disabled = false;
+
+        if (!res.ok) {
+          pathOutput.innerHTML = `<p class="text-red-500">❌ Error: ${data.message || 'Path calculation failed.'}</p>`;
+          return;
+        }
+
+        currentPath = data.path;
+        currentTotalTime = data.total_time;
+
+        pathOutput.innerHTML = `
+          <div style="display:flex;align-items:center;color:#16a34a;font-weight:700;margin-bottom:8px;">✅ Path Found!</div>
+          <p style="margin:6px 0;"><strong>Total Time:</strong>
+          <span style="color:#2563eb;font-weight:700;font-size:18px;">
+            ${currentTotalTime} ${data.unit}
+          </span></p>
+          <div style="margin-top:8px;">
+            <strong>Route:</strong>
+            <div style="margin-top:8px;padding:10px;background:#fff;border-radius:8px;border:1px solid #eef2ff;">
+              ${data.path.map(p => `<a href="#" onclick="openCityModal('${p}')" style="color:#2563eb;font-weight:600;text-decoration:underline;">${p}</a>`).join(' ➡️ ')}
+            </div>
+          </div>
+        `;
+        openMapsBtn.style.display = 'block';
+        getAiBtn.style.display = 'block';
+        openMapsBtn.onclick = () => window.open(generateMapsUrl(currentPath), '_blank');
+        getAiBtn.onclick = getAiInsight;
+      } catch (err) {
+        console.error(err);
+        findPathBtn.disabled = false;
+        pathOutput.innerHTML = `<p style="color:#dc2626;">Server error while finding path.</p>`;
+      }
+    });
+
+    // ✅ FIXED: Get AI insights for ALL cities in path + scrollable modal
+    async function getAiInsight() {
+      if (!currentPath || currentPath.length < 2) return;
+      getAiBtn.disabled = true;
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/ai_insight`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ route: currentPath })  // ensures full route sent
+        });
+        const data = await res.json();
+        getAiBtn.disabled = false;
+
+        if (!res.ok) {
+          alert('AI prompt fetch failed.');
+          return;
+        }
+
+        modal.style.display = 'block';
+        backdrop.style.display = 'block';
+        modalContent.innerHTML = `
+          <h2 style="color:#048a3b; font-weight:700; margin-bottom:10px; text-align:center;">
+            💡 AI Travel Insight
+          </h2>
+          <div style="text-align:left; font-size:15px; line-height:1.6; color:#333; white-space:pre-line;">
+            ${data.insight}
+          </div>
+        `;
+      } catch (err) {
+        console.error("AI error:", err);
+        getAiBtn.disabled = false;
+        alert('AI service failed.');
+      }
+    }
+
+    document.getElementById('logout-btn').addEventListener('click', async (e) => {
+      e.preventDefault();
+      try {
+        await fetch(`${API_BASE_URL}/api/logout`, { method: 'POST', credentials: 'include' });
+      } catch (e) {}
+      window.location.assign('/login.html');
+    });
+
+    checkAuthAndInit();
+  </script>
+</body>
+</html>

@@ -1,0 +1,124 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login - Travel Planner</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      background: linear-gradient(180deg, #e0f2fe 0%, #f8fafc 100%);
+      font-family: 'Inter', sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .card {
+      background: #fff;
+      padding: 2rem;
+      width: 100%;
+      max-width: 400px;
+      border-radius: 12px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+    }
+    h2 {
+      text-align: center;
+      color: #2563eb;
+      font-weight: 700;
+      margin-bottom: 1.5rem;
+    }
+    input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+      font-size: 1rem;
+    }
+    button {
+      width: 100%;
+      padding: 12px;
+      background: #2563eb;
+      border: none;
+      border-radius: 8px;
+      color: white;
+      font-weight: 600;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.25s ease;
+    }
+    button:hover {
+      background: #3b82f6;
+      transform: translateY(-1px);
+    }
+    .link {
+      text-align: center;
+      margin-top: 1rem;
+      font-size: 0.9rem;
+    }
+    .link a {
+      color: #2563eb;
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .error {
+      color: #dc2626;
+      font-size: 0.9rem;
+      margin-bottom: 1rem;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>Login</h2>
+    <div class="error" id="error"></div>
+    <input type="email" id="email" placeholder="Email" />
+    <input type="password" id="password" placeholder="Password" />
+    <button id="login-btn">Login</button>
+    <div class="link">Don't have an account? <a href="register.html">Register</a></div>
+  </div>
+
+  <script>
+  const API = "http://127.0.0.1:8000";
+  const errorBox = document.getElementById("error");
+
+  document.getElementById("login-btn").onclick = async () => {
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value.trim();
+    if (!email || !password) {
+      errorBox.textContent = "Please fill in both fields.";
+      errorBox.style.display = "block";
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API}/api/login`, {   // ✅ fixed: added /api/
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+        credentials: "include"
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.status === "success") {
+        // ✅ Redirect to main page after successful login
+        window.location.href = "index.html";
+      } else {
+        errorBox.textContent = data.message || "Invalid credentials.";
+        errorBox.style.display = "block";
+      }
+    } catch (err) {
+      console.error("Login error:", err);
+      errorBox.textContent = "Server error. Please try again.";
+      errorBox.style.display = "block";
+    }
+  };
+</script>
+
+</body>
+</html>

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Register - Shortest Path Travel Planner</title>
+  <style>
+    body {
+      font-family: "Inter", sans-serif;
+      background: linear-gradient(135deg, #e8f0ff, #f9fcff);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .container {
+      background: #fff;
+      padding: 40px;
+      border-radius: 16px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+    }
+
+    h2 {
+      color: #1a4eff;
+      margin-bottom: 24px;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border: 1px solid #dcdcdc;
+      border-radius: 8px;
+      font-size: 15px;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      margin-top: 12px;
+      background-color: #1a4eff;
+      border: none;
+      border-radius: 8px;
+      color: white;
+      font-weight: bold;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    button:hover {
+      background-color: #0038d3;
+    }
+
+    .error {
+      color: red;
+      margin-top: 8px;
+      font-size: 14px;
+    }
+
+    .success {
+      color: green;
+      margin-top: 8px;
+      font-size: 14px;
+    }
+
+    p {
+      margin-top: 16px;
+      font-size: 14px;
+    }
+
+    a {
+      color: #1a4eff;
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Create Account</h2>
+
+    <div id="error" class="error"></div>
+    <div id="success" class="success"></div>
+
+    <form id="registerForm">
+      <input type="text" id="username" placeholder="Full Name" required />
+      <input type="email" id="email" placeholder="Email Address" required />
+      <input type="password" id="password" placeholder="Password" required />
+      <button type="submit">Register</button>
+    </form>
+
+    <p>Already have an account? <a href="login.html">Login</a></p>
+  </div>
+
+  <script>
+    const API = "http://127.0.0.1:8000";
+
+    document.getElementById("registerForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const username = document.getElementById("username").value.trim();
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value.trim();
+      const error = document.getElementById("error");
+      const success = document.getElementById("success");
+      error.textContent = "";
+      success.textContent = "";
+
+      if (!username || !email || !password) {
+        error.textContent = "Please fill all fields.";
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API}/register`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username, email, password }),
+        });
+
+        const data = await res.json();
+
+        if (data.status === "success") {
+          success.textContent = "✅ Registration successful! Redirecting to login...";
+          setTimeout(() => {
+            window.location.href = "login.html"; // ✅ fixed redirection
+          }, 1500);
+        } else {
+          error.textContent = data.message || "Registration failed.";
+        }
+      } catch (err) {
+        console.error(err);
+        error.textContent = "Server error. Please try again.";
+      }
+    });
+  </script>
+</body>
+</html>
