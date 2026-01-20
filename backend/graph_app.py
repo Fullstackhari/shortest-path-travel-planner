@@ -19,8 +19,14 @@ load_dotenv()
 # Load Graph
 # -------------------------------
 try:
-    with open("graph_data.json", "r") as f:
-        graph_data = json.load(f)
+    import os
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+GRAPH_PATH = os.path.join(BASE_DIR, "graph_data.json")
+
+with open(GRAPH_PATH, "r") as f:
+    graph_data = json.load(f)
+
 
     G = nx.Graph()
 
