@@ -4,7 +4,7 @@ from flask_cors import CORS
 import sqlite3
 import json
 import networkx as nx
-from graph_logic import find_shortest_path 
+from backend.graph_logic import find_shortest_path
 from dotenv import load_dotenv
 import os  
 #from openai import OpenAI
