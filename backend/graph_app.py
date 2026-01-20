@@ -15,8 +15,6 @@ CORS(app, supports_credentials=True)
 
 # Load environment variables
 load_dotenv()  
-#openai_api_key = os.getenv("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") 
-#client = OpenAI(api_key=openai_api_key)
 # -------------------------------
 # Load Graph
 # -------------------------------
