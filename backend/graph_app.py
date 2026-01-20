@@ -23,7 +23,7 @@ try:
     GRAPH_PATH = os.path.join(BASE_DIR, "graph_data.json")
 
     with open(GRAPH_PATH, "r") as f:
-    graph_data = json.load(f)
+        graph_data = json.load(f)
 
 
     G = nx.Graph()
