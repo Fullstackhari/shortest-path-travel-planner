@@ -108,6 +108,10 @@ def register_user():
     except Exception as e:
         print("⚠️ /register error:", e)
         return jsonify({"status": "error", "message": "Server error"}), 500
+        
+@app.route("/")
+def home():
+    return "Shortest Path Travel Planner Backend is Running ✅", 200
 
 
 @app.route('/api/login', methods=['POST'])
