@@ -10,8 +10,17 @@ import os
 #from openai import OpenAI
 
 app = Flask(__name__)
+app.config.update(
+    SESSION_COOKIE_SAMESITE="None",
+    SESSION_COOKIE_SECURE=True,
+)
 app.secret_key = "supersecretkey"
-CORS(app, supports_credentials=True)
+CORS(app, supports_credentials=True, origins=[
+    "http://127.0.0.1:5500",
+    "http://localhost:5500",
+    "https://YOUR-FRONTEND-STATIC-SITE.onrender.com"
+])
+
 
 # Load environment variables
 load_dotenv()  
