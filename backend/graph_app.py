@@ -15,11 +15,16 @@ app.config.update(
     SESSION_COOKIE_SECURE=True,
 )
 app.secret_key = "supersecretkey"
-CORS(app, supports_credentials=True, origins=[
-    "http://127.0.0.1:5500",
-    "http://localhost:5500",
-    "https://shortest-path-travel-planner-1.onrender.com"
-])
+CORS(
+    app,
+    supports_credentials=True,
+    resources={r"/*": {"origins": [
+        "http://127.0.0.1:5500",
+        "http://localhost:5500",
+        "https://shortest-path-travel-planner-1.onrender.com"
+    ]}}
+)
+
 
 
 # Load environment variables
@@ -205,6 +210,13 @@ def shortest_path():
     except Exception as e:
         print("⚠️ /api/path error:", e)
         return jsonify({"status": "error", "message": "Server error"}), 500
+
+@app.after_request
+def after_request(response):
+    response.headers.add("Access-Control-Allow-Credentials", "true")
+    response.headers.add("Access-Control-Allow-Headers", "Content-Type,Authorization")
+    response.headers.add("Access-Control-Allow-Methods", "GET,POST,OPTIONS")
+    return response
 
 
 @app.route("/api/ai_insight", methods=["POST"])
