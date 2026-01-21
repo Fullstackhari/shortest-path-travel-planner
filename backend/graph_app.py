@@ -18,7 +18,7 @@ app.secret_key = "supersecretkey"
 CORS(app, supports_credentials=True, origins=[
     "http://127.0.0.1:5500",
     "http://localhost:5500",
-    "https://YOUR-FRONTEND-STATIC-SITE.onrender.com"
+    "https://shortest-path-travel-planner-1.onrender.com"
 ])
 
 
